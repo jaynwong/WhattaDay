@@ -1,5 +1,5 @@
 import java.net.URISyntaxException;
 
 public interface Executable {
-    void execute() throws URISyntaxException;
+    int execute() throws URISyntaxException;
 }

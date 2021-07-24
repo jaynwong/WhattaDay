@@ -3,7 +3,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Scanner;
 
-public class HomePage extends CreateFile implements Executable{
+public class HomePage implements Executable{
     private static final int USERNAME = 1;
     private static final int PASSWORD = 2;
     private static final String ACCOUNTS_FILE = "database/accounts.csv";
@@ -18,26 +18,24 @@ public class HomePage extends CreateFile implements Executable{
      * This method is the backbone of the home page of the application, which asks the users to either
      * log in or sign up.
      */
-    public void execute(){
-        boolean validity = false;
+    public int execute(){
 
         this.loadAccounts();
 
         System.out.println("PROGRAM: (Login) (Sign up)");
 
-        while(!validity){
+        while(true){
             System.out.print("    USER: ");
             String login = scanner.nextLine();
 
-            if(login.toLowerCase(Locale.ROOT).equals("l")){
-                validity = true;
+            if(login.toLowerCase(Locale.ROOT).equals("<")){
                 this.login();
-            } else if (login.toLowerCase(Locale.ROOT).equals("r")){
-                validity = true;
+                return 1;
+            } else if (login.toLowerCase(Locale.ROOT).equals(">")){
                 this.signUp();
+                return 0;
             }
         }
-
 
     }
 
@@ -49,12 +47,12 @@ public class HomePage extends CreateFile implements Executable{
             System.out.print("    USER: ");
             String userChoice = scanner.nextLine();
 
-            if(userChoice.toLowerCase(Locale.ROOT).equals("l")){
+            if(userChoice.toLowerCase(Locale.ROOT).equals("<")){
                 if(this.accountLogin(USERNAME)){
                     validity = true;
                 }
 
-            } else if(userChoice.toLowerCase(Locale.ROOT).equals("r")){
+            } else if(userChoice.toLowerCase(Locale.ROOT).equals(">")){
                 if(this.accountLogin(PASSWORD)){
                     validity = true;
                 }
@@ -83,6 +81,7 @@ public class HomePage extends CreateFile implements Executable{
 
         if(this.checkUser(username, password)){
             System.out.println("PROGRAM: Log in success!");
+            this.username = username;
             return true;
         } else {
             System.out.println("PROGRAM: Log in failed");
@@ -92,10 +91,10 @@ public class HomePage extends CreateFile implements Executable{
                 System.out.print("    USER: ");
                 String userChoice = scanner.nextLine();
 
-                if (userChoice.toLowerCase(Locale.ROOT).equals("r")) {
+                if (userChoice.toLowerCase(Locale.ROOT).equals(">")) {
                     this.signUp();
                     validity = true;
-                } else if (userChoice.toLowerCase(Locale.ROOT).equals("l")) {
+                } else if (userChoice.toLowerCase(Locale.ROOT).equals("<")) {
                     return false;
                 } else {
                     System.out.println("PROGRAM: Error");
@@ -134,10 +133,10 @@ public class HomePage extends CreateFile implements Executable{
                 System.out.print("    USER: ");
                 String userChoice = scanner.nextLine();
 
-                if(userChoice.toLowerCase(Locale.ROOT).equals("l")){
+                if(userChoice.toLowerCase(Locale.ROOT).equals("<")){
                     this.login();
                     validity=true;
-                } else if (userChoice.toLowerCase(Locale.ROOT).equals("r")){
+                } else if (userChoice.toLowerCase(Locale.ROOT).equals(">")){
                     System.out.println("PROGRAM: Please enter another email");
                 } else {
                     System.out.println("PROGRAM: Error");

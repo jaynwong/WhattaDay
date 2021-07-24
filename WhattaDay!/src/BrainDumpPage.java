@@ -1,7 +1,7 @@
-public class BrainDumpPage extends CreateFile implements Executable{
+public class BrainDumpPage extends WhattaDay implements Executable{
 
     @Override
-    public void execute() {
-
+    public int execute() {
+        return 2;
     }
 }
