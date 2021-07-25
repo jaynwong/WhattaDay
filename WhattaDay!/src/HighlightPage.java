@@ -30,7 +30,7 @@ public class HighlightPage extends WhattaDay implements Executable{
                 String userAddTask = scanner.nextLine();
 
                 if(userAddTask.equals("<")){
-                    this.addTask(today);
+                    this.setHighlight();
                     validity=true;
                 } else if(userAddTask.equals(">")){
                     validity=true;
@@ -350,6 +350,7 @@ public class HighlightPage extends WhattaDay implements Executable{
                     this.highlightText = newHighlight;
                     validity = true;
                     innerLoop = true;
+                    this.writeToFile();
                 } else {
                     System.out.println("    PROGRAM: Please enter either (<) or (>)");
                 }
