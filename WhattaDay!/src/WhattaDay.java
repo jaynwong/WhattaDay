@@ -5,6 +5,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Scanner;
 
@@ -23,6 +24,8 @@ public class WhattaDay {
     private static final String ACTIVITY = "Activity.txt";
     private static final String BRAIN_DUMP = "BrainDump.txt";
 
+    protected static final int DESCRIPTION_LENGTH = 40;
+
     private final LocalDate today = LocalDate.now();
     private final LocalDate tomorrow = today.plusDays(1);
     private final LocalDate yesterday = today.minusDays(1);
@@ -30,6 +33,7 @@ public class WhattaDay {
     private final String todayDate = today.toString();
     private final String tmrDate = tomorrow.toString();
     private final String yesterdayDate = yesterday.toString();
+    private final Calendar currentTime = Calendar.getInstance();
 
     private String currentDate = todayDate;
     protected Scanner scanner = new Scanner(System.in);
@@ -62,6 +66,14 @@ public class WhattaDay {
         return currentDate;
     }
 
+    public void printDate(String date, boolean printTime){
+        System.out.println("                            " + date);
+        if(printTime) {
+            System.out.println("                              " + currentTime.get(Calendar.HOUR_OF_DAY) + ":" +
+                    currentTime.get(Calendar.MINUTE));
+        }
+    }
+
     public void displayPage() throws URISyntaxException {
 
         if(currentPage == 0){
@@ -71,7 +83,7 @@ public class WhattaDay {
             HighlightPage highlightPage = new HighlightPage(homePage.getUsername(), yesterdayDate, todayDate, tmrDate);
             currentPage = highlightPage.execute();
         } else if (currentPage == 2){
-            BrainDumpPage brainDumpPage = new BrainDumpPage();
+            BrainDumpPage brainDumpPage = new BrainDumpPage(homePage.getUsername());
             currentPage = brainDumpPage.execute();
         }
     }
@@ -107,5 +119,64 @@ public class WhattaDay {
             System.out.print("-");
         }
         System.out.println();
+    }
+
+    public boolean isNumber(String number){
+        boolean numeric = true;
+
+        try {
+            Integer num = Integer.parseInt(number);
+        } catch (NumberFormatException e) {
+            numeric = false;
+        }
+
+        return numeric;
+    }
+
+    public void printTask(int id, String[] desc, boolean status){
+        StringBuilder line = new StringBuilder();
+        int charCount=0;
+        boolean firstLine=true;
+
+        String number = String.format("%03d", id);
+
+        System.out.print("|  "+number+"  | ");
+        for (String s : desc) {
+            charCount += s.length() + 1;
+            if (charCount > 46) {
+                for (int j = 0; j < 46 - line.length(); j++) {
+                    System.out.print(" ");
+                }
+                if (firstLine) {
+                    if (status) {
+                        System.out.println("| completed  |");
+                    } else {
+                        System.out.println("| incomplete |");
+                    }
+                    firstLine = false;
+                } else {
+                    System.out.println("|            |");
+                }
+                System.out.print("|       | ");
+                line = new StringBuilder();
+                charCount = 0;
+            }
+            line.append(s).append(" ");
+            System.out.print(s + " ");
+        }
+
+        for(int i=0; i<46-line.length(); i++){
+            System.out.print(" ");
+        }
+
+        if (firstLine) {
+            if (status) {
+                System.out.println("| completed  |");
+            } else {
+                System.out.println("| incomplete |");
+            }
+        } else {
+            System.out.println("|            |");
+        }
     }
 }

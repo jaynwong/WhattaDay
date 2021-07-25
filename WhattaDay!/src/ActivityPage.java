@@ -1,13 +1,10 @@
 import java.io.*;
-import java.net.URISyntaxException;
 import java.util.*;
 
 public class ActivityPage extends WhattaDay implements Executable{
-    private static final int DESCRIPTION_LENGTH = 40;
 
     private final HashMap<String, Event> activities = new HashMap<>();
 
-    private final Calendar currentTime = Calendar.getInstance();
     private final Scanner scanner = new Scanner(System.in);
 
     private final String username;
@@ -17,6 +14,8 @@ public class ActivityPage extends WhattaDay implements Executable{
     private int hour;
     private int min;
     private double timeDouble;
+    private boolean replacement=false;
+    private boolean setEventTime = false;
 
     public ActivityPage(String username, String yesterday, String today, String tmr){
         this.username = username;
@@ -26,7 +25,7 @@ public class ActivityPage extends WhattaDay implements Executable{
     }
 
     @Override
-    public int execute() throws URISyntaxException {
+    public int execute() {
         boolean validity = false;
         this.readFile();
 
@@ -46,8 +45,7 @@ public class ActivityPage extends WhattaDay implements Executable{
             }
         }
 
-        validity=false;
-        while(!validity) {
+        while(true) {
             if(getCurrentDate().equals(tmr)){
                 this.printLine();
                 this.printDate(getCurrentDate(), false);
@@ -90,7 +88,6 @@ public class ActivityPage extends WhattaDay implements Executable{
                 }
             }
         }
-        return 0;
     }
 
     public int countEvents(String date){
@@ -105,37 +102,35 @@ public class ActivityPage extends WhattaDay implements Executable{
         return count;
     }
 
-    public String setEventTime(String date){
+    public String settingEventTime(String date){
         String time = "";
         String hourInput="";
-        boolean cancelChoice = false;
-        boolean checkTime=false;
-        boolean validity = false;
-        boolean cancellation = false;
+        boolean validity= false;
+        boolean innerLoop = false;
+        boolean timeSlotProblem = false;
+
         System.out.println("PROGRAM: Adding new event ...");
 
-        while(!checkTime) {
-            while (!validity) {
-                System.out.println("    PROGRAM: Please enter the time of the event");
-                System.out.print("        Hour: ");
+        while(!validity){
+            System.out.println("    PROGRAM: please enter the time of the event");
+            while(!innerLoop) {
+                System.out.print("        HOUR: ");
                 hourInput = scanner.nextLine();
-                int intHour = Integer.parseInt(hourInput);
+                System.out.print("        MINUTE: ");
+                String inputMin = scanner.nextLine();
 
-                if (intHour < 24 && intHour >= 0) {
-                    validity = true;
-                    this.hour = intHour;
-                }
-            }
+                if (this.isNumber(hourInput) && this.isNumber(inputMin)) {
 
-            validity = false;
-            while (!validity) {
-                System.out.print("        Minute: ");
-                String minute = scanner.nextLine();
-                int intMin = Integer.parseInt(minute);
+                    int hourNum = Integer.parseInt(hourInput);
+                    int minNum = Integer.parseInt(inputMin);
 
-                if (intMin >= 0 && intMin < 60) {
-                    validity = true;
-                    this.min = intMin;
+                    if (hourNum>=0 && hourNum<24 && minNum<60 && minNum>=0) {
+                        innerLoop=true;
+                        this.hour = hourNum;
+                        this.min = minNum;
+                    } else {
+                        System.out.println("    PROGRAM: Please enter a valid time");
+                    }
                 }
             }
 
@@ -151,44 +146,98 @@ public class ActivityPage extends WhattaDay implements Executable{
                 time = hourInput + "." + whole;
             }
 
-            if(!checkTimeAvailability(this.timeDouble, date)){
-                while(!cancelChoice) {
-                    System.out.println("    PROGRAM: Time slot unavailable, would you like to re-enter the time or " +
-                            "cancel adding the event? ");
-                    System.out.println("PROGRAM: (re-enter) (cancel)");
-                    System.out.print("USER: ");
-                    String userChoice = scanner.nextLine();
+            innerLoop=false;
+            while(!innerLoop){
+                System.out.println("    PROGRAM: Adding new event time at:  "+hourInput+":"+
+                        String.format("%02d",this.min));
+                System.out.println("    PROGRAM: (re-enter) (continue)");
+                System.out.print("    USER: ");
+                String userChoose = scanner.nextLine();
 
-                    if(userChoice.equals("<")){
-                        cancelChoice = true;
-                    } else if (userChoice.equals(">")){
-                        cancelChoice = true;
-                        checkTime=true;
-                        cancellation=true;
-                    }
+                if(userChoose.equals("<")){
+                    innerLoop=true;
+                } else if (userChoose.equals(">")){
+                    innerLoop=true;
+                    validity=true;
+                } else {
+                    System.out.println("    PROGRAM: Please enter either (<) or (>)");
                 }
-            } else {
-                checkTime=true;
+            }
+
+            innerLoop=false;
+            while(!innerLoop){
+                if(!checkTimeAvailability(this.timeDouble, date)){
+                    System.out.println("    PROGRAM: Time slot unavailable");
+                    System.out.println("    PROGRAM: (cancel) (continue)");
+
+                    System.out.print("    USER: ");
+                    String userDecision = scanner.nextLine();
+
+                    if(userDecision.equals("<")){
+                        System.out.println("PROGRAM: Adding event cancelled successfully ...");
+                        innerLoop = true;
+                    } else if(userDecision.equals(">")){
+                        timeSlotProblem = true;
+                        innerLoop = true;
+                    } else {
+                        System.out.println("    PROGRAM: Please enter either (<) or (>)");
+                    }
+                } else {
+                    System.out.println("    PROGRAM: Time slot available");
+                    innerLoop=true;
+                    validity = true;
+                    this.setEventTime=true;
+                }
+            }
+
+            innerLoop = false;
+            while(!innerLoop && timeSlotProblem){
+                System.out.println("    PROGRAM: Would you like to replace existing event at time slot " + hourInput+":"+
+                        String.format("%02d",this.min) + ", or re-enter the time of the new event?");
+                System.out.println("    PROGRAM: (re-enter) (replace)");
+                System.out.print("    USER: ");
+                String userIn = scanner.nextLine();
+
+                if(userIn.equals("<")){
+                    innerLoop = true;
+                    timeSlotProblem = false;
+                } else if(userIn.equals(">")){
+                    if(this.replaceEvent(date, time)) {
+                        this.replacement = true;
+                    }
+                    innerLoop=true;
+                    validity=true;
+                }
             }
         }
-
-        System.out.println("    Setting event time as: "+this.hour+":"+this.min);
-
-        validity=false;
-        while(!validity && !cancellation) {
-            System.out.println("    PROGRAM: (re-enter) (continue)");
-            System.out.print("    USER: ");
-            String userInput = scanner.nextLine();
-
-            if(userInput.equals("<")){
-                this.setEventTime(date);
-                validity=true;
-            } else if(userInput.equals(">")){
-                validity=true;
-            }
-        }
-
         return time;
+    }
+
+    public boolean replaceEvent(String date, String time){
+
+        System.out.println("PROGRAM: Replacing existing time ...");
+        while(true){
+            System.out.println("    PROGRAM: Event being replaced is shown below.");
+            double doubleNumber = activities.get(date+":"+time).getTime();
+            int hour = (int) doubleNumber;
+            long minutes = Math.round((doubleNumber - hour)*60);
+            this.printEvent(date+":"+time, hour, minutes, activities.get(date+":"+time).getDescription());
+
+            System.out.println("    PROGRAM: (cancel) (continue)");
+            System.out.print("    USER: ");
+            String userChoice = scanner.nextLine();
+
+            if(userChoice.equals("<")){
+                System.out.println("    PROGRAM: Replacing event was cancelled successfully!");
+                return false;
+            } else if (userChoice.equals(">")){
+                System.out.println("    PROGRAM: Removing the existing event ...");
+                activities.remove(date+":"+time);
+                return true;
+            } else {
+                System.out.println("    PROGRAM: Please enter either (<) or (>)");
+            }
+        }
     }
 
     public String setEventDesc(){
@@ -203,7 +252,7 @@ public class ActivityPage extends WhattaDay implements Executable{
             desc = scanner.nextLine();
 
             System.out.println("    PROGRAM: You have entered the following as the event's description");
-            System.out.println("    EVENT DESCRIPTION ENTERED: " +desc);
+            System.out.println("        EVENT DESCRIPTION ENTERED: " +desc);
 
             while(!innerValid) {
                 System.out.println("    PROGRAM: (re-enter) (continue)");
@@ -223,13 +272,18 @@ public class ActivityPage extends WhattaDay implements Executable{
     }
 
     public void addEvent(String date){
-        String eventTime = this.setEventTime(date);
-        String eventDescription = this.setEventDesc();
+        String eventTime = this.settingEventTime(date);
 
-        activities.put(date+":"+eventTime,new Event(date+":"+eventTime,date,this.timeDouble,
-                eventDescription.split(" ")));
+        if(this.replacement || this.setEventTime) {
+            String eventDescription = this.setEventDesc();
 
-        this.writeToFile();
+            activities.put(date + ":" + eventTime, new Event(date + ":" + eventTime, date, this.timeDouble,
+                    eventDescription.split(" ")));
+
+            this.writeToFile();
+            this.replacement=false;
+            this.setEventTime=false;
+        }
     }
 
     public boolean checkTimeAvailability(double time, String date){
@@ -244,6 +298,7 @@ public class ActivityPage extends WhattaDay implements Executable{
 
     public void deleteEvent(){
         boolean validity = false;
+        boolean innerLoop = false;
 
         System.out.println("PROGRAM: Deleting an event ...");
         while(!validity){
@@ -251,21 +306,32 @@ public class ActivityPage extends WhattaDay implements Executable{
             System.out.print("        EVENT ID: ");
             String eventId = scanner.nextLine();
 
-            if(activities.containsKey(eventId)){
-                activities.remove(eventId);
-                validity=true;
+            if (activities.containsKey(eventId)) {
+                while (!innerLoop) {
+                    System.out.println("        ENTERED EVENT ID: "+eventId);
+                    System.out.println("    PROGRAM: Are you sure you want to delete this event?");
+                    System.out.println("    PROGRAM: (cancel) (delete)");
+                    System.out.print("    USER: ");
+                    String userChoice = scanner.nextLine();
+
+                    if(userChoice.equals("<")) {
+                        innerLoop=true;
+                        validity = true;
+                    } else if (userChoice.equals(">")){
+                        activities.remove(eventId);
+                        System.out.println("PROGRAM: Deleting an event cancelled successfully ...");
+                        innerLoop = true;
+                        validity = true;
+                    } else {
+                        System.out.println("    PROGRAM: *error*");
+                    }
+                }
+            } else {
+                System.out.println("    PROGRAM: Please enter a valid event ID");
             }
         }
 
         this.writeToFile();
-    }
-
-    public void printDate(String date, boolean printTime){
-        System.out.println("                            " + date);
-        if(printTime) {
-            System.out.println("                              " + currentTime.get(Calendar.HOUR_OF_DAY) + ":" +
-                    currentTime.get(Calendar.MINUTE));
-        }
     }
 
     public void printEvents(String date){
@@ -278,7 +344,7 @@ public class ActivityPage extends WhattaDay implements Executable{
             }
         }
 
-        Collections.sort(eventArrayList, new timeComparator());
+        eventArrayList.sort(new timeComparator());
 
         for(Event event:eventArrayList) {
             double doubleNumber = event.getTime();
@@ -321,7 +387,7 @@ public class ActivityPage extends WhattaDay implements Executable{
         System.out.println("|");
     }
 
-    public void readFile() throws URISyntaxException {
+    public void readFile() {
         String path = "/Users/"+MAC_USER_ID+"/Desktop/User Database/"+username+"/Activity.txt";
 
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
